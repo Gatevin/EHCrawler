@@ -31,38 +31,6 @@ class EhentaiCrawler:
         self.pattern_book_image = re.compile(self.regular_expression_book_image)
         return
 
-    def check_connection(self):
-        #TODO: Add connection check
-        return;
-    """
-    def download_image(self, page_url, num, book_name):
-        print("The url of the page: %s" % page_url)
-        headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
-            }
-        finished = False
-        while not finished:
-            try:
-                req = request.Request(page_url, headers=headers, method='GET')
-                page = request.urlopen(req).read()
-                page = page.decode('utf-8')
-                image_url_list = re.findall(self.pattern_book_image, page)
-                image_url = image_url_list[0]
-                finished = True
-            except:
-                pass
-        file_suffix = ".jpg"
-        file_name = "{}{}{}{}".format(book_name, os.sep, num, file_suffix)
-        finished = False
-        while not finished:
-            try:
-                urllib.request.urlretrieve(image_url, file_name)
-                finished = True
-            except:
-                pass
-        return;
-    """
-    
     def download_image(self, book_name, queue):
         while True:
             (num, page_url) = queue.get()
@@ -93,7 +61,6 @@ class EhentaiCrawler:
             queue.task_done()
 
     def download_book(self, book_url, book_name):
-        print("The url of the book: %s" % book_url)
         headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
             }
@@ -145,17 +112,7 @@ class EhentaiCrawler:
             worker.setDaemon(True)
             worker.start()
             
-        print("Main is waiting...")
         task_queue.join()
-        print("End download")
-        
-        """
-        if(os.path.exists(book_name) == False):
-            os.mkdir(book_name)
-        for i in range(0, int(book_pages_number[0])):
-            self.download_image(book_image_webpage_url[i], i, book_name)
-        """
-        #self.download_image(book_image_webpage_prefix[0] + 1, 1, book_name)
         return;
 
 
@@ -180,13 +137,10 @@ class EhentaiCrawler:
                 'f_search':keyword,
                 'f_apply':'Apply Filter'
             }
-            #print(parse.urlencode(result_type))
             data = parse.urlencode(result_type)
             req = request.Request(site_url + '?' + data, headers=headers, method='GET')
             page = request.urlopen(req).read()
             page = page.decode('utf-8')
-            #with open('search_result.html', 'wt', encoding='utf-8') as f:
-            #    print(page, file=f)
             
             search_result = re.findall(self.pattern_item, page)
             
@@ -231,9 +185,6 @@ class EhentaiCrawler:
                 return
 
     def start(self):
-        #aaa = '<div style="margin:1px auto 0; width:100px; height:144px; background:transparent url(https://ehgt.org/m/001100/1100918-00.jpg) -1000px 0 no-repeat"><a href="https://e-hentai.org/s/618a26a53c/1100918-11"><img alt="11" title="Page 11: MJK_17_T602_011.png" src="https://ehgt.org/g/blank.gif" style="width:100px; height:143px; margin:-1px 0 0 -1px" /></a></div>'
-        #print(re.findall(self.pattern_book_image_webpage_prefix, aaa))
-        #return
         search_keyword = '';
         search_keyword = input("Please input search keyword:")
         while(len(search_keyword) == 0):
@@ -244,11 +195,7 @@ class EhentaiCrawler:
         return;
         
 
-print('Checking network connection to e site...\n\r');
 crawler = EhentaiCrawler()
-crawler.check_connection()
 
-print('Connection ready, welcome to e crawler.\n\r');
-
-
+print("Welcome to EHCrawler!")
 crawler.start()
