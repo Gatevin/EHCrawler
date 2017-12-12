@@ -10,6 +10,10 @@ Practice for python
 * Items will be saved in the same directory with main.py file
 * Enjoy yourself
 
+## TODO
+
+* Handle Offensive Warning Page (Sometimes appear when library is offensive to everyone)
+
 
 ## License
 
