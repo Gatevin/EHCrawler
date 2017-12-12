@@ -7,7 +7,7 @@ Practice for python
 * Run in Python3
 * Then follow the std output message
 * Input search Keyword, select the items you need
-* Items will be saved in the same directory of main.py file
+* Items will be saved in the same directory with main.py file
 * Enjoy yourself
 
 
