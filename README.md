@@ -12,7 +12,7 @@ Practice for python
 
 ## TODO
 
-* May UI to improve user experience
+* UI to improve user experience
 
 ## License
 
