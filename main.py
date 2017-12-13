@@ -13,13 +13,14 @@ from queue import Queue
 from threading import Thread
 import time
 import urllib
+from http import cookiejar
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8') #change std output default to utf-8 (windows)
 
 
 class EhentaiCrawler:
     regular_expression_books_item = '<div class="it5"><a href="(https://e-hentai\.org/g/.+?)" .+?>(.+?)<\/a><\/div>'
-    regular_expression_book_size = '<td class="gdt1">File Size:</td><td class="gdt2">(.+?)</td></tr>'
+    regular_expression_book_size = '<td class="gdt1">File Size:</td><td class="gdt2">(.+?)</td>'
     regular_expression_book_pages_number = '<td class="gdt1">Length:</td><td class="gdt2">(.+?) pages</td>'
     regular_expression_book_image_webpage_url = r'<a href="(https://e-hentai\.org/s/.+?)"><img alt=.+?></a>'
     regular_expression_book_image = '<img id="img" src="(.+?)" style=".+?" onerror=".+?">'
@@ -31,6 +32,7 @@ class EhentaiCrawler:
         self.pattern_book_image = re.compile(self.regular_expression_book_image)
         return
 
+    #Multiple threads to download images
     def download_image(self, book_name, queue):
         while True:
             (num, page_url) = queue.get()
@@ -38,11 +40,14 @@ class EhentaiCrawler:
             headers={
                     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
                 }
+
+            #Seems donn't need cookie to get images...
             finished = False
             while not finished:
                 try:
                     req = request.Request(page_url, headers=headers, method='GET')
-                    page = request.urlopen(req).read()
+                    page = request.urlopen(req).read() #add cookie
+                    #page = opener.open(req).read()
                     page = page.decode('utf-8')
                     image_url_list = re.findall(self.pattern_book_image, page)
                     image_url = image_url_list[0]
@@ -60,27 +65,38 @@ class EhentaiCrawler:
                     pass
             queue.task_done()
 
+    #Get each images url with books url
     def download_book(self, book_url, book_name):
         headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
             }
         page_info={
                 'p':0,
+                'nw':'session',
                 }
+        print("book url is %s" % (book_url))
+        
+        #Cookie to store 'nw' parameter to access offensive contents
+        cookie_filename = 'cookie.txt'#Currently store nothing in this file
+        cookie = cookiejar.CookieJar()
+        handler = request.HTTPCookieProcessor(cookie)
+        opener = request.build_opener(handler)
         
         finished = False
         while not finished:
             try:
                 data = parse.urlencode(page_info)
+                print("URL: %s" % (book_url + '?' + data))
                 req = request.Request(book_url + '?' + data, headers=headers, method='GET')
-                book = request.urlopen(req).read()
+                #book = request.urlopen(req).read() #add cookie to access
+                book = opener.open(req).read()
+                #cookie.save(ignore_discard=True, ignore_expires=True)#(Keep when discard, cover when exist)
                 book = book.decode('utf-8')
                 file_size = re.findall(self.pattern_book_size, book)
                 book_pages_number = re.findall(self.pattern_book_pages_number, book)
                 finished = True
             except:
                 pass
-            
         print("Download start... (Book Size: %s pages, %s)" % (book_pages_number[0], file_size[0]))
         total_book_url_number = int(book_pages_number[0]) / 40
         if(int(book_pages_number[0]) % 40 != 0):
@@ -93,7 +109,9 @@ class EhentaiCrawler:
             while not finished:
                 try:
                     req = request.Request(book_url + '?' + data, headers=headers, method='GET')
-                    book = request.urlopen(req).read()
+                    #book = request.urlopen(req).read()
+                    book = opener.open(req).read()
+                    #cookie.save(ignore_discard=True, ignore_expires=True)#(Keep when discard, cover when exist)
                     book = book.decode('utf-8')
                     book_image_webpage_url += re.findall(self.pattern_book_image_webpage_url)
                     finished = True
@@ -102,7 +120,6 @@ class EhentaiCrawler:
         print(book_image_webpage_url[0])
         if(os.path.exists(book_name) == False):
             os.mkdir(book_name)
-            
         task_queue = Queue()
         for i in range(0, int(book_pages_number[0])):
             task_queue.put((i, book_image_webpage_url[i]))
@@ -115,7 +132,7 @@ class EhentaiCrawler:
         task_queue.join()
         return;
 
-
+    #Seach page submit then show result list
     def search(self, keyword='hiten', page_number=0):
         while(True):
             site_url = 'https://e-hentai.org/'
@@ -135,7 +152,7 @@ class EhentaiCrawler:
                 'f_asianporn':0,
                 'f_misc':0,
                 'f_search':keyword,
-                'f_apply':'Apply Filter'
+                'f_apply':'Apply Filter',
             }
             data = parse.urlencode(result_type)
             req = request.Request(site_url + '?' + data, headers=headers, method='GET')

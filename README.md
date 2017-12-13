@@ -12,8 +12,7 @@ Practice for python
 
 ## TODO
 
-* Handle Offensive Warning Page (Sometimes appear when library is offensive to everyone)
-
+* May UI to improve user experience
 
 ## License
 
